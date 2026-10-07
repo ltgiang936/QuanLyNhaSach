@@ -1,0 +1,70 @@
+@model BOOK.Models.ViewModels.CreateBorrowTicketViewModel
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Lập Phiếu Mượn Sách";
+}
+
+<div class="space-y-6">
+    <h1 class="text-2xl font-black text-slate-900">Quầy Lập Phiếu Mượn Sách</h1>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="p-3 rounded-xl bg-rose-100 text-rose-800 text-sm font-bold">@TempData["Error"]</div>
+    }
+
+    <form method="get" asp-action="Create" class="flex gap-3">
+        <input type="text" name="cardNumber" value="@Model.CardNumber" placeholder="Nhập số thẻ, vd LIB-24DH110429"
+               class="flex-1 p-2.5 border border-slate-300 rounded-xl font-mono" />
+        <button type="submit" class="px-4 py-2.5 bg-navy-800 text-white rounded-xl text-xs font-bold">Kiểm Tra Thẻ</button>
+    </form>
+
+    @if (ViewData["CardNotFound"] != null)
+    {
+        <div class="p-3 rounded-xl bg-rose-100 text-rose-800 text-sm">Không tìm thấy thẻ này.</div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.CardInfo.CardNumber))
+    {
+        <div class="p-4 rounded-2xl border @(Model.CardInfo.CanBorrow ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-300")">
+            <p><strong>@Model.CardInfo.StudentName</strong> — MSSV @Model.CardInfo.StudentCode</p>
+            <p>Trạng thái thẻ: <strong>@Model.CardInfo.CardStatus</strong> — Đang mượn: @Model.CardInfo.ActiveBorrowedCount cuốn</p>
+            @if (!Model.CardInfo.CanBorrow)
+            {
+                <p class="text-rose-700 font-bold mt-1">⛔ @Model.CardInfo.BlockReason</p>
+            }
+        </div>
+
+        @if (Model.CardInfo.CanBorrow)
+        {
+            <form method="post" asp-action="Create" class="space-y-4 bg-white p-6 rounded-2xl border border-slate-200">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="cardNumber" value="@Model.CardInfo.CardNumber" />
+
+                <div>
+                    <label class="block font-bold text-sm mb-1">Chọn tối đa 3 bản sao (giữ Ctrl để chọn nhiều):</label>
+                    <select name="selectedCopyIds" multiple size="8" class="w-full p-2 border border-slate-300 rounded-xl">
+                        @foreach (var item in (List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewData["AvailableCopies"]!)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-sm mb-1">Hạn trả (tối đa 15 ngày):</label>
+                    <input type="date" name="dueDate" value="@DateTime.Today.AddDays(15).ToString("yyyy-MM-dd")"
+                           min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")"
+                           max="@DateTime.Today.AddDays(15).ToString("yyyy-MM-dd")"
+                           class="p-2 border border-slate-300 rounded-xl" required />
+                </div>
+
+                <div>
+                    <label class="block font-bold text-sm mb-1">Ghi chú:</label>
+                    <input type="text" name="notes" class="w-full p-2 border border-slate-300 rounded-xl" />
+                </div>
+
+                <button type="submit" class="px-6 py-3 bg-navy-800 text-white rounded-xl font-bold">Xác Nhận Mượn</button>
+            </form>
+        }
+    }
+</div>
